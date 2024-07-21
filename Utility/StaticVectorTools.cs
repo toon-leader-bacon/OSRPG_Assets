@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -13,4 +14,11 @@ public static class StaticVectorTools
   {
     return new Vector3Int(vec.x, vec.y, 0);
   }
+
+  public static void PrintList(List<Vector2Int> list, string listName = "") {
+    foreach(Vector2Int v in list) {
+      Debug.Log($"{listName}: ({v.x},{v.y})");
+    }
+  }
+
 }

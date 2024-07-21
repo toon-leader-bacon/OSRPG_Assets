@@ -28,7 +28,6 @@ public class TileInfoManager : MonoBehaviour
           // Set the collider collision based on the data stored in the Nocab Tile prefab
           if (tile is Tile concreteTile)
           {
-            Debug.Log("Nocab flag setting the collision for a tile");
             concreteTile.colliderType = association.nocabTile.isWalkable ?
                                         Tile.ColliderType.None :
                                         Tile.ColliderType.Grid;
