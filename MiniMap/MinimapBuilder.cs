@@ -55,7 +55,7 @@ public class MinimapBuilder : MonoBehaviour
      * these points will be the main cities
      */
     NocabRNG rng = NocabRNG.defaultRNG;
-    Box2D_2 mainLoop = new(0, 0, 20, 10, positiveYDown: true);
+    Box2D mainLoop = new(0, 0, 20, 10, positiveYDown: true);
 
     List<City> cityPoints = new();
 
@@ -149,7 +149,7 @@ public class MinimapBuilder : MonoBehaviour
     }
 
     // Step 1: Determine the relative positions of the two cities
-    Box2D_2 citiesOnCorners = new(cityA.position.x, cityA.position.y,
+    Box2D citiesOnCorners = new(cityA.position.x, cityA.position.y,
                                 cityB.position.x, cityB.position.y,
                                 positiveYDown: false);
 
