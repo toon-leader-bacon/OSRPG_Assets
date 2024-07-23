@@ -1,9 +1,19 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 public class ElbowLine
 {
+
+  public enum ElbowTypes
+  {
+    OneTurn = 1,
+    TwoTurn = 2
+  }
+  public static readonly List<ElbowTypes> AllElbowTypes = new() {
+    ElbowTypes.OneTurn, ElbowTypes.TwoTurn };
+
   readonly NocabRNG rng;
 
   #region Constructors
@@ -22,20 +32,29 @@ public class ElbowLine
 
   #region Connect Points
 
+  public static List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end, bool startHorizontal, ElbowTypes connectionType)
+  {
+    // Vertical or Horizontal line
+    if (start.x == end.x || start.y == end.y)
+    { return NocabPixelLine.getPointsAlongLine(start, end); }
+
+    switch (connectionType)
+    {
+      default:
+      case ElbowTypes.OneTurn:
+        return OneTurn(start, end, startHorizontal);
+      case ElbowTypes.TwoTurn:
+        return TwoTurn(start, end, startHorizontal);
+    }
+  }
+
   public static List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end, bool startHorizontal, NocabRNG rng)
   {
     // Vertical or Horizontal line
     if (start.x == end.x || start.y == end.y)
     { return NocabPixelLine.getPointsAlongLine(start, end); }
 
-    switch (rng.generateInt(1, 2))
-    {
-      default:
-      case 1:
-        return OneTurn(start, end, startHorizontal);
-      case 2:
-        return TwoTurn(start, end, startHorizontal);
-    }
+    return ConnectPoints(start, end, startHorizontal, rng.randomElem(AllElbowTypes));
   }
 
   public static List<Vector2Int> ConnectPoints_static(Vector2Int start, Vector2Int end, bool startHorizontal)
