@@ -90,9 +90,9 @@ public class ElbowLine
       return NocabPixelLine.getPointsAlongLine(start, end);
     }
 
-    Box2D box = Box2D.Box2D_CornerPoints(start.x, start.y,
-                                         end.x, end.y,
-                                         positiveYDown: false);
+    Box2D box = new(start.x, start.y,
+                      end.x, end.y,
+                      positiveYDown: false);
 
     Vector2Int elbowPt;
 

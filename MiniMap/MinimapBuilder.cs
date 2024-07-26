@@ -45,7 +45,6 @@ public class MinimapBuilder : MonoBehaviour
     {
       DrawCity(city.position);
     }
-
   }
 
   public List<City> CircleOfCities()
@@ -187,7 +186,6 @@ public class MinimapBuilder : MonoBehaviour
                CardinalDirection, // dir leaving city A
                CardinalDirection // dir entering city b
       >> possibleRoads = new();
-    Debug.Log($"0Possible roads size: {possibleRoads.Count}");
     // Generate Possible roads leaving City A horizontally
     if (cityA.directionUnoccupied(cityAHoriz))
     {
@@ -199,7 +197,6 @@ public class MinimapBuilder : MonoBehaviour
                               ElbowLine.ElbowTypes.OneTurn,
                               cityAHoriz,
                               cityBVert));
-        Debug.Log($"1Possible roads size: {possibleRoads.Count}");
       }
       if (cityB.directionUnoccupied(cityBHoriz))
       {
@@ -208,7 +205,6 @@ public class MinimapBuilder : MonoBehaviour
                               ElbowLine.ElbowTypes.TwoTurn,
                               cityAHoriz,
                               cityBHoriz));
-        Debug.Log($"2Possible roads size: {possibleRoads.Count}");
       }
     }
 
@@ -223,7 +219,6 @@ public class MinimapBuilder : MonoBehaviour
                               ElbowLine.ElbowTypes.TwoTurn,
                               cityAVert,
                               cityBVert));
-        Debug.Log($"3Possible roads size: {possibleRoads.Count}");
       }
       if (cityB.directionUnoccupied(cityBHoriz))
       {
@@ -232,7 +227,6 @@ public class MinimapBuilder : MonoBehaviour
                               ElbowLine.ElbowTypes.OneTurn,
                               cityAVert,
                               cityBHoriz));
-        Debug.Log($"4Possible roads size: {possibleRoads.Count}");
       }
     }
 
@@ -244,7 +238,6 @@ public class MinimapBuilder : MonoBehaviour
       return new(new());
     }
 
-    Debug.Log($"Final Possible roads size: {possibleRoads.Count}");
     // All possible paths have been generated. Select one, generate it
     var roadData = NocabRNG.newRNG.randomElem(possibleRoads);
     bool roadHorizontalStart = roadData.Item1;

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class blab : MonoBehaviour
 {
@@ -8,37 +10,52 @@ public class blab : MonoBehaviour
 
   void Start()
   {
+    regenerateCityLoop();
+    /**
+    TODO: Write a one pass filter that does the following:
+     - Assigns route numbers/ names to each route
+     - Detects squares of path and replaces them with a larger "zone" route
+     - Different city shapes
+
+     Reach?
+     - Detects T junctions in paths and makes an appropriate branch
+       - T into other path
+       - T into City
+       R R T T R R R    R=Road T=Junction C=city
+           T C
+    */
+  }
+
+
+  void Update()
+  {
+    if (Input.GetKeyUp(KeyCode.Space))
+    {
+      regenerateCityLoop();
+    }
+  }
+
+  void clearExistingLoopTiles()
+  {
+
+  }
+
+  void regenerateCityLoop()
+  {
+
     List<City> cityPts = minimapBuilder.CircleOfCities();
     cityPts.Add(cityPts[0]);
     List<Road> connectedRoads = minimapBuilder.ConnectCitiesInOrder(cityPts);
     minimapBuilder.DrawRoad(connectedRoads);
     minimapBuilder.DrawCity(cityPts);
 
-    // City a = new City(1, 1);
-    // City b = new City(5, 9);
-    // Road r = minimapBuilder.findValidConnector(a, b);
-    // minimapBuilder.DrawRoad(r.tilesInOrder);
-    // Debug.Log(b.directionOccupied(CardinalDirection.North));
-    // Debug.Log(b.directionOccupied(CardinalDirection.South));
-    // Debug.Log(b.directionOccupied(CardinalDirection.East));
-    // Debug.Log(b.directionOccupied(CardinalDirection.West));
-    // Debug.Log("==================================");
-
-    // City c = new City(10, 4);
-    // r = minimapBuilder.findValidConnector(b, c);
-    // minimapBuilder.DrawRoad(r.tilesInOrder);
-    // Debug.Log(b.directionOccupied(CardinalDirection.North));
-    // Debug.Log(b.directionOccupied(CardinalDirection.South));
-    // Debug.Log(b.directionOccupied(CardinalDirection.East));
-    // Debug.Log(b.directionOccupied(CardinalDirection.West));
-
-
-    // minimapBuilder.DrawCity(new List<City>() { a, b, c });
-  }
-
-
-  void Update()
-  {
-
+    PositionTileDict ptd = new();
+    foreach (Road r in connectedRoads)
+    {
+      ptd.AddRoad(r, minimapBuilder.pathTile);
+    }
+    TileLaydownLinter tll = new();
+    PositionTileDict lintedTiles = tll.SmartDrawTiles(ptd);
+    lintedTiles.drawSelf(minimapBuilder.tilemap);
   }
 }
