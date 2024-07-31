@@ -5,6 +5,8 @@ public class BasicAttackMove : IMove
 {
     public string Name => "Basic Attack";
 
+    public EBattleType type => EBattleType.Normal;
+
     public void Execute(BattleManager battleManager, IMonster user, IMonster target)
     {
         int damage = CalculateDamage(user.Attack, target.Defense);

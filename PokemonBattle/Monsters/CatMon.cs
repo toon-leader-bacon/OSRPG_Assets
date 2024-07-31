@@ -13,7 +13,9 @@ public class CatMon : IMonster
   public int Attack { get; set; }
   public List<IMove> Moves { get; }
 
-  public CatMon(int speed, int maxHealth, int defense, int attack, string nickname = CLASS_NAME)
+  public MonsterBattleType Types => new(EBattleType.Fire);
+
+    public CatMon(int speed, int maxHealth, int defense, int attack, string nickname = CLASS_NAME)
   {
     Nickname = nickname;
     Speed = speed;

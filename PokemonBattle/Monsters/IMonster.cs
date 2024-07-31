@@ -10,5 +10,7 @@ public interface IMonster
     int Defense { get; set; }
     int Attack { get; set; }
     List<IMove> Moves { get; }
+
+    MonsterBattleType Types { get;}
 }
 

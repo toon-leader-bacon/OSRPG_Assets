@@ -12,6 +12,7 @@ public class BirdMon : IMonster
     public int Attack { get; set; }
     public List<IMove> Moves { get; }
 
+    public MonsterBattleType Types => new(EBattleType.Water, EBattleType.Normal);
 
     public BirdMon(int speed, int maxHealth, int defense, int attack, string nickname = CLASS_NAME)
     {

@@ -2,6 +2,7 @@
 public class SlickRainMove : IMove
 {
     public string Name => "Slick Rain";
+    public EBattleType type => EBattleType.Water;
 
     public void Execute(BattleManager battleManager, IMonster user, IMonster target)
     {
