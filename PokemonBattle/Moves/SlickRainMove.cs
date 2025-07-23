@@ -4,6 +4,10 @@ public class SlickRainMove : IMove
     public string Name => "Slick Rain";
     public EBattleType type => EBattleType.Water;
 
+    public int power { get; set; }
+
+    public EMoveMedium moveMedium { get; set; }
+
     public void Execute(BattleManager battleManager, IMonster user, IMonster target)
     {
         foreach (var monster in battleManager.GetAllMonsters())

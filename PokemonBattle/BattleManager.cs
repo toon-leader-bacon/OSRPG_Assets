@@ -6,32 +6,50 @@ public class BattleManager
   // private IBattleAI playerAi;
   // private IMonster playerMonster;
 
-
   // private IBattleAI computerAi;
   // private IMonster computerMonster;
 
-  BattleTeam playerTeam;
-  BattleTeam computerTeam;
+  // BattleTeam playerTeam;
+  // BattleTeam computerTeam;
+  // public BattleWeather currentWeather = BattleWeather.None;
+
+  protected BattleModel battleModel;
 
   private System.Random random = new System.Random();
 
-  public BattleManager(BattleTeam playerTeam, BattleTeam computerTeam)
-  {
-    this.playerTeam = playerTeam;
-    this.playerTeam._SetTeamID(0);
+  // public BattleManager(BattleTeam playerTeam, BattleTeam computerTeam)
+  // {
+  //   this.playerTeam = playerTeam;
+  //   this.battleModel.playerTeam._SetTeamID(0);
 
-    this.computerTeam = computerTeam;
-    this.computerTeam._SetTeamID(1);
+  //   this.computerTeam = computerTeam;
+  //   this.battleModel.computerTeam._SetTeamID(1);
+  // }
+
+  public BattleManager(BattleModel model)
+  {
+    model.playerTeam._SetTeamID(BattleModel.PLAYER_TEAM_ID);
+    model.computerTeam._SetTeamID(BattleModel.COMPUTER_TEAM_ID);
+    this.battleModel = model;
   }
 
   public void StartBattle()
   {
     Debug.Log("Battle Start");
 
+    // Simple pokemon battle loop: Ask each team for their move. Then execute the move in the engine.
+    // The engine will handle the battle logic, including the order of moves, the effects of moves, and the
+    // status of the monsters.
     while (!IsBattleOver())
     {
-      IMove playerMove = playerTeam.BattleAI.GetMove(this, playerTeam.ActiveMonster, computerTeam.ActiveMonster);
-      IMove computerMove = computerTeam.BattleAI.GetMove(this, computerTeam.ActiveMonster, playerTeam.ActiveMonster);
+      var playerAI = battleModel.playerTeam.BattleAI;
+      var computerAI = battleModel.computerTeam.BattleAI;
+
+      var playerMonster = battleModel.playerTeam.ActiveMonster;
+      var computerMonster = battleModel.computerTeam.ActiveMonster;
+
+      var playerMove = playerAI.GetMove(this, playerMonster, computerMonster);
+      var computerMove = computerAI.GetMove(this, computerMonster, playerMonster);
 
       ExecuteTurn(playerMove, computerMove);
     }
@@ -41,20 +59,35 @@ public class BattleManager
 
   private bool IsBattleOver()
   {
-    return playerTeam.ActiveMonster.Health <= 0 || computerTeam.ActiveMonster.Health <= 0;
+    return battleModel.playerTeam.ActiveMonster.Health <= 0
+      || battleModel.computerTeam.ActiveMonster.Health <= 0;
   }
 
   private void ExecuteTurn(IMove playerMove, IMove computerMove)
   {
-    if (playerTeam.ActiveMonster.Speed >= computerTeam.ActiveMonster.Speed)
+    var playerMonster = battleModel.playerTeam.ActiveMonster;
+    var computerMonster = battleModel.computerTeam.ActiveMonster;
+    // Determine the order of moves.
+    // Ties go to the player (more fun that way :D)
+    if (playerMonster.Speed >= computerMonster.Speed)
     {
-      ExecuteMove(playerMove, playerTeam.ActiveMonster, computerTeam.ActiveMonster);
-      if (!IsBattleOver()) ExecuteMove(computerMove, computerTeam.ActiveMonster, playerTeam.ActiveMonster);
+      // Player goes first.
+      ExecuteMove(playerMove, playerMonster, computerMonster);
+      if (!IsBattleOver())
+      {
+        // Computer goes second.
+        ExecuteMove(computerMove, computerMonster, playerMonster);
+      }
     }
     else
     {
-      ExecuteMove(computerMove, computerTeam.ActiveMonster, playerTeam.ActiveMonster);
-      if (!IsBattleOver()) ExecuteMove(playerMove, playerTeam.ActiveMonster, computerTeam.ActiveMonster);
+      // Computer goes first.
+      ExecuteMove(computerMove, computerMonster, playerMonster);
+      if (!IsBattleOver())
+      {
+        // Player goes second.
+        ExecuteMove(playerMove, playerMonster, computerMonster);
+      }
     }
   }
 
@@ -68,18 +101,22 @@ public class BattleManager
   private void AnnounceWinner()
   {
     Debug.Log("Battle over");
-    if (playerTeam.ActiveMonster.Health > 0)
+    if (battleModel.playerTeam.ActiveMonster.Health > 0)
     {
-      Debug.Log($"{playerTeam.ActiveMonster.Nickname} wins!");
+      Debug.Log($"{battleModel.playerTeam.ActiveMonster.Nickname} wins!");
     }
     else
     {
-      Debug.Log($"{computerTeam.ActiveMonster.Nickname} wins!");
+      Debug.Log($"{battleModel.computerTeam.ActiveMonster.Nickname} wins!");
     }
   }
 
   public IMonster[] GetAllMonsters()
   {
-    return new IMonster[] { playerTeam.ActiveMonster, computerTeam.ActiveMonster };
+    return new IMonster[]
+    {
+      battleModel.playerTeam.ActiveMonster,
+      battleModel.computerTeam.ActiveMonster,
+    };
   }
 }

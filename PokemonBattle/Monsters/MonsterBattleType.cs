@@ -8,5 +8,7 @@ public readonly struct MonsterBattleType
     this.type1 = type1;
     this.type2 = type2;
   }
-  public MonsterBattleType(EBattleType type1) : this(type1, EBattleType.None) { }
+
+  public MonsterBattleType(EBattleType type1)
+    : this(type1, EBattleType.None) { }
 }

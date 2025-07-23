@@ -11,7 +11,8 @@ public class BattleAI_Random : IBattleAI
     List<IMove> availableMoves = friendlyMonster.Moves;
     if (availableMoves.Count == 0)
     {
-      throw new InvalidOperationException("The monster has no available moves.");
+      Console.WriteLine("The monster has no available moves.");
+      return new StruggleMove();
     }
 
     int randomIndex = random.Next(availableMoves.Count);

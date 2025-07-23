@@ -27,9 +27,8 @@ public class UINavigationGrid
     }
   }
 
-  public UINavigationGrid(Button[] buttons, bool wrapAround = false, int cols = 2) :
-    this(new List<Button>(buttons), wrapAround, cols)
-  { }
+  public UINavigationGrid(Button[] buttons, bool wrapAround = false, int cols = 2)
+    : this(new List<Button>(buttons), wrapAround, cols) { }
 
   public UINavigationGrid(List<Button> buttonList, bool wrapAround = false, int cols = 2)
   {
@@ -99,10 +98,8 @@ public class UINavigationGrid
   private void IndicateDirection(ref int index, int delta, int limit)
   {
     buttons[selectedRow, selectedCol].interactable = true; // Turn the current selection off
-    index = wrapAround ?
-            (index + delta + limit) % limit :
-            Mathf.Clamp(index + delta, 0, limit - 1);
-    IndicateButton(selectedRow, selectedCol);// Turn the new selection on
+    index = wrapAround ? (index + delta + limit) % limit : Mathf.Clamp(index + delta, 0, limit - 1);
+    IndicateButton(selectedRow, selectedCol); // Turn the new selection on
   }
 
   public void IndicateButton(int row, int col)
