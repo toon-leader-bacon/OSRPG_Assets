@@ -10,10 +10,13 @@ public class BasicAttackMove : IMove
 
   public EMoveMedium moveMedium { get; set; }
 
-  public void Execute(BattleManager battleManager, IMonster user, IMonster target)
+  public MoveResult Execute(BattleManager battleManager, IMonster user, IMonster target)
   {
     int damage = CalculateDamage(user.Attack, target.Defense);
-    target.Health -= damage;
+
+    var result = new MoveResult();
+    result.AddDamage(target, damage);
+    return result;
   }
 
   private int CalculateDamage(int attack, int defense)

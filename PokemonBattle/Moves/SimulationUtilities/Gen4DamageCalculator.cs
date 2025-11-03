@@ -33,8 +33,8 @@ public class Gen4DamageCalculator : BaseDamageCalculator
     bool isCritical
   )
   {
-    bool reflectUp = defendingSideEffects.ContainsTag("Reflect");
-    bool lightScreenUp = defendingSideEffects.ContainsTag("LightScreen");
+    bool reflectUp = defendingSideEffects.ContainsTag(ESideEffect.Reflect.ToEffectString());
+    bool lightScreenUp = defendingSideEffects.ContainsTag(ESideEffect.LightScreen.ToEffectString());
     if ((!reflectUp && !lightScreenUp) || isCritical)
     {
       return 1;
@@ -108,16 +108,6 @@ public class Gen4DamageCalculator : BaseDamageCalculator
     return im;
   }
 
-  protected float gen4_mod3(IMonster caster, IMonster target, IMove move, BattleModel model)
-  {
-    float srf = 1; // solid rock/ filter
-    float im = caster.hasItem ? caster.item.DmgMod3(caster, target, move, model) : 1;
-    float tl = 1; // tinted lense mod
-    float trb = 1; // type resiting berry mod
-
-    return srf * im * tl * trb;
-  }
-
   public override int CalculateDamage(
     IMonster caster,
     IMonster target,
@@ -136,23 +126,20 @@ public class Gen4DamageCalculator : BaseDamageCalculator
 
     float mod1 = gen4_mod1(caster, target, move, model, isCritical);
     float mod2 = gen4_mod2(caster, target, move, model);
-    float random = NocabRNG.newRNG.generateInt(85, 100, true, true);
+    float random = NocabRNG.newRNG.generateInt(85, 100, true, true) / 100;
 
     float stab = calculate_STAB(caster.Types, move.type);
     float type1 = calculate_typeEffective(target.Types.type1, move.type, model.typeChart);
     float type2 = calculate_typeEffective(target.Types.type2, move.type, model.typeChart);
-    float mod3 = gen4_mod3(caster, target, move, model);
 
     float result =
       ((((level * 2 / 5) + 2) * power * attack / 50 / defense * mod1) + 2)
       * criticalHit
       * mod2
       * random
-      / 100
       * stab
       * type1
-      * type2
-      * mod3;
+      * type2;
     return (int)Math.Max(result, 1);
   }
 }

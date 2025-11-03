@@ -340,8 +340,8 @@ public class IMove_Blab
         Also, if the move is a critical hit, RL is made equal to 1 no matter what.
      */
     // Exit early, most moves will not have these defensive effects up
-    bool reflectUp = defendingSideEffects.ContainsTag("Reflect");
-    bool lightScreenUp = defendingSideEffects.ContainsTag("LightScreen");
+    bool reflectUp = defendingSideEffects.ContainsTag(ESideEffect.Reflect.ToEffectString());
+    bool lightScreenUp = defendingSideEffects.ContainsTag(ESideEffect.LightScreen.ToEffectString());
     if ((!reflectUp && !lightScreenUp) || isCritical)
     {
       return 1;

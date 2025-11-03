@@ -3,6 +3,10 @@ using Unity.Mathematics;
 
 public abstract class BaseDamageCalculator
 {
+  /// <summary>
+  /// Calculates Same Type Attack Bonus (STAB) multiplier based on if the move type matches either of the monster's types.
+  /// Returns either 1.0 (no match) or 1.5 (type match).
+  /// </summary>
   protected float calculate_STAB(MonsterBattleType monType, EBattleType moveType)
   {
     if (moveType == EBattleType.None)
@@ -13,6 +17,10 @@ public abstract class BaseDamageCalculator
     return anyMatch ? 1.5f : 1.0f;
   }
 
+  /// <summary>
+  /// Calculates type effectiveness multiplier against a monster with two possible types.
+  /// Returns a value between 0.0 (no effect) to 4.0 (double super effective).
+  /// </summary>
   protected float calculate_typeEffective(
     MonsterBattleType targetTypes,
     EBattleType moveType,
@@ -36,6 +44,10 @@ public abstract class BaseDamageCalculator
     return result;
   }
 
+  /// <summary>
+  /// Calculates type effectiveness multiplier against a single type target.
+  /// Returns a value of 0.0 (no effect), 0.5 (not very effective), 1.0 (normal), or 2.0 (super effective).
+  /// </summary>
   protected float calculate_typeEffective(
     EBattleType targetType,
     EBattleType moveType,
@@ -49,6 +61,10 @@ public abstract class BaseDamageCalculator
     return typeChart.GetEffectiveness(moveType, targetType);
   }
 
+  /// <summary>
+  /// Calculates the final power of a move after applying all relevant battle modifiers (items, abilities, field effects).
+  /// Returns a value typically between 0.0 and 200.0, though some combinations can exceed this range.
+  /// </summary>
   protected float CalculateMovePower(
     IMonster caster,
     IMonster target,
@@ -67,6 +83,10 @@ public abstract class BaseDamageCalculator
     return hh * bp * it * chg * ms * ws * ua * fa;
   }
 
+  /// <summary>
+  /// Calculates the final attack stat after applying all relevant modifiers based on the move's medium (Physical/Special).
+  /// Returns a value typically between 1.0 and 999.0 depending on base stats and modifiers.
+  /// </summary>
   protected float CalculateAtk(IMonster caster, IMonster target, IMove move, BattleModel model)
   {
     float stat = move.moveMedium switch
@@ -90,6 +110,10 @@ public abstract class BaseDamageCalculator
     return stat * sm * am * im;
   }
 
+  /// <summary>
+  /// Calculates the final defense stat after applying all relevant modifiers based on the move's medium (Physical/Special).
+  /// Returns a value typically between 1.0 and 999.0 depending on base stats and modifiers.
+  /// </summary>
   protected float CalculateDef(IMonster caster, IMonster target, IMove move, BattleModel model)
   {
     float stat = move.moveMedium switch
@@ -112,7 +136,10 @@ public abstract class BaseDamageCalculator
     return stat * sm * mod * sx;
   }
 
-  // Abstract method that each generation must implement
+  /// <summary>
+  /// Main damage calculation method that each generation must implement with its specific formula.
+  /// Returns an integer damage value of at least 1, with upper bound varying by generation and modifiers.
+  /// </summary>
   public abstract int CalculateDamage(
     IMonster caster,
     IMonster target,

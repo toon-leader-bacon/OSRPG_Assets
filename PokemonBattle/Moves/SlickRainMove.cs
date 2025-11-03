@@ -1,18 +1,28 @@
-
 public class SlickRainMove : IMove
 {
-    public string Name => "Slick Rain";
-    public EBattleType type => EBattleType.Water;
+  public string Name => "Slick Rain";
+  public EBattleType type => EBattleType.Water;
 
-    public int power { get; set; }
+  public int power { get; set; }
 
-    public EMoveMedium moveMedium { get; set; }
+  public EMoveMedium moveMedium { get; set; }
 
-    public void Execute(BattleManager battleManager, IMonster user, IMonster target)
+  public MoveResult Execute(BattleManager battleManager, IMonster user, IMonster target)
+  {
+    var result = new MoveResult();
+
+    // Increase speed of all monsters on the field
+    foreach (var monster in battleManager.GetAllMonsters())
     {
-        foreach (var monster in battleManager.GetAllMonsters())
+      result.TargetEffects.Add(
+        new TargetEffect
         {
-            monster.Speed += 2; // Example speed increase
+          Target = monster,
+          AttributeDeltas = new() { { EMonsterAttribute.Speed, 2 } },
         }
+      );
     }
+
+    return result;
+  }
 }

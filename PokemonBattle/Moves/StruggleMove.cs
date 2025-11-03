@@ -8,15 +8,17 @@ public class StruggleMove : IMove
 
   public int power { get; set; } = 50;
 
-  public void Execute(BattleManager battleManager, IMonster user, IMonster target)
+  public MoveResult Execute(BattleManager battleManager, IMonster user, IMonster target)
   {
     // Struggle move is a special move that does damage to the user.
     // It is used when the user has no moves left or when the user is in an error state.
     int damage = CalculateDamage(user.Attack, target.Defense);
-    target.Health -= damage;
+    int recoil = (int)(user.MaxHealth * 0.1);
 
-    // The user takes 10% of its max health in damage.
-    user.Health -= (int)(user.MaxHealth * 0.1);
+    var result = new MoveResult();
+    result.AddDamage(target, damage);
+    result.AddDamage(user, recoil); // Recoil damage to the user
+    return result;
   }
 
   private int CalculateDamage(int attack, int defense)
