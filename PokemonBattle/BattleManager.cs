@@ -4,104 +4,274 @@ using UnityEngine;
 
 /**
 The BattleManager is the central class that orchestrates the battle between two teams of monsters.
-At time of writing, this is based off of the Pokemon style of battle, where each team has a single monster.
+It delegates battle flow logic (turn order, timing, etc.) to an IBattleConductor implementation.
 At a high level, this class will:
- - Ask each team for their move.
- - Handle the battle logic
-   -- Determine move order
-   -- Execute the moves
-   -- Handle the effects of moves
-   -- Handle the status of the monsters
+ - Use a conductor to determine action order and timing
+ - Execute the moves and actions
+ - Handle the effects of moves
+ - Handle the status of the monsters
  - Announce the winner
 */
 public class BattleManager
 {
-  // private IBattleAI playerAi;
-  // private IMonster playerMonster;
-
-  // private IBattleAI computerAi;
-  // private IMonster computerMonster;
-
-  // BattleTeam playerTeam;
-  // BattleTeam computerTeam;
-  // public BattleWeather currentWeather = BattleWeather.None;
-
   protected BattleModel battleModel;
+  protected IBattleConductor conductor;
 
   private System.Random random = new System.Random();
 
-  // public BattleManager(BattleTeam playerTeam, BattleTeam computerTeam)
-  // {
-  //   this.playerTeam = playerTeam;
-  //   this.battleModel.playerTeam._SetTeamID(0);
-
-  //   this.computerTeam = computerTeam;
-  //   this.battleModel.computerTeam._SetTeamID(1);
-  // }
-
-  public BattleManager(BattleModel model)
+  public BattleManager(BattleModel model, IBattleConductor conductor)
   {
     model.playerTeam._SetTeamID(BattleModel.PLAYER_TEAM_ID);
     model.computerTeam._SetTeamID(BattleModel.COMPUTER_TEAM_ID);
     this.battleModel = model;
+    this.conductor = conductor;
+    this.conductor.Initialize(model);
   }
+
+  /// <summary>
+  /// Convenience constructor that uses SimpleTurnConductor by default
+  /// </summary>
+  public BattleManager(BattleModel model)
+    : this(model, new SimpleTurnConductor()) { }
 
   public void StartBattle()
   {
     Debug.Log("Battle Start");
 
-    // Simple pokemon battle loop: Ask each team for their move. Then execute the move in the engine.
-    // The engine will handle the battle logic, including the order of moves, the effects of moves, and the
-    // status of the monsters.
-    while (!IsBattleOver())
+    // Check if conductor is time-driven (ATB, real-time systems)
+    bool isTimeDriven = conductor is ITimeDrivenConductor;
+
+    if (isTimeDriven)
     {
-      var playerAI = battleModel.playerTeam.BattleAI;
-      var computerAI = battleModel.computerTeam.BattleAI;
-
-      var playerMonster = battleModel.playerTeam.ActiveMonster;
-      var computerMonster = battleModel.computerTeam.ActiveMonster;
-
-      var playerMove = playerAI.GetMove(this, playerMonster, computerMonster);
-      var computerMove = computerAI.GetMove(this, computerMonster, playerMonster);
-
-      ExecuteTurn(playerMove, computerMove);
+      StartTimeDrivenBattle();
+    }
+    else
+    {
+      StartTurnBasedBattle();
     }
 
     AnnounceWinner();
   }
 
-  private bool IsBattleOver()
+  /// <summary>
+  /// Main loop for turn-based battles (SimpleTurnConductor, PartyBattleConductor, etc.)
+  /// Synchronous action execution - wait for each action to be requested and executed.
+  /// </summary>
+  private void StartTurnBasedBattle()
   {
-    return battleModel.playerTeam.ActiveMonster.Health <= 0
-      || battleModel.computerTeam.ActiveMonster.Health <= 0;
+    // Main battle loop using conductor pattern
+    while (!conductor.IsBattleOver())
+    {
+      // Get next action from conductor (move, switch, item, etc.)
+      BattleAction action = conductor.GetNextAction();
+
+      if (action == null)
+      {
+        // Phase is complete (round/segment/cycle depending on conductor type)
+        // Process end-of-phase effects (poison, weather, etc.)
+        conductor.ProcessEndOfPhase();
+        continue;
+      }
+
+      // Execute the action (one turn)
+      ExecuteAction(action);
+
+      // After executing ANY action, check if forced switches are needed
+      // (e.g., monster fainted from attack, or from recoil damage)
+      CheckAndHandleForcedSwitches();
+    }
   }
 
-  private void ExecuteTurn(IMove playerMove, IMove computerMove)
+  /// <summary>
+  /// Main loop for time-driven battles (ATB, real-time systems).
+  /// Continuously advances time and executes actions as they become ready.
+  /// NOTE: This is a simplified simulation loop. In a real Unity game, this would
+  /// be driven by MonoBehaviour.Update() instead of a while loop.
+  /// </summary>
+  private void StartTimeDrivenBattle()
   {
-    var playerMonster = battleModel.playerTeam.ActiveMonster;
-    var computerMonster = battleModel.computerTeam.ActiveMonster;
-    // Determine the order of moves.
-    // Ties go to the player (more fun that way :D)
-    if (playerMonster.Speed >= computerMonster.Speed)
+    var timeDrivenConductor = conductor as ITimeDrivenConductor;
+    const float TICK_INTERVAL = 0.016f; // ~60 FPS simulation
+
+    Debug.Log("Starting time-driven battle (ATB mode)");
+
+    while (!conductor.IsBattleOver())
     {
-      // Player goes first.
-      ExecuteMove(playerMove, playerMonster, computerMonster);
-      if (!IsBattleOver())
+      // Advance time (in real Unity, this would be Time.deltaTime)
+      timeDrivenConductor.Tick(TICK_INTERVAL);
+
+      // Try to execute any ready actions
+      BattleAction action = conductor.GetNextAction();
+
+      if (action != null)
       {
-        // Computer goes second.
-        ExecuteMove(computerMove, computerMonster, playerMonster);
+        ExecuteAction(action);
+        CheckAndHandleForcedSwitches();
       }
+
+      // Small delay to prevent infinite loop in headless simulation
+      // In real Unity with Update(), this wouldn't be needed
+      System.Threading.Thread.Sleep((int)(TICK_INTERVAL * 1000));
     }
-    else
+  }
+
+  /// <summary>
+  /// Checks if any team needs a forced switch (active monster fainted) and handles it immediately.
+  /// This is called after every action execution, so recoil damage triggers immediate switches.
+  /// </summary>
+  private void CheckAndHandleForcedSwitches()
+  {
+    // Check player team
+    if (battleModel.playerTeam.NeedsForcedSwitch())
     {
-      // Computer goes first.
-      ExecuteMove(computerMove, computerMonster, playerMonster);
-      if (!IsBattleOver())
-      {
-        // Player goes second.
-        ExecuteMove(playerMove, playerMonster, computerMonster);
-      }
+      HandleForcedSwitch(battleModel.playerTeam);
     }
+
+    // Check computer team
+    if (battleModel.computerTeam.NeedsForcedSwitch())
+    {
+      HandleForcedSwitch(battleModel.computerTeam);
+    }
+  }
+
+  /// <summary>
+  /// Handles a forced switch for a team whose active monster(s) fainted.
+  /// Handles all fainted active slots at once.
+  /// </summary>
+  private void HandleForcedSwitch(BattleTeam team)
+  {
+    // Find all fainted active slots and switch them
+    int faintedSlot;
+    while ((faintedSlot = team.GetFaintedActiveSlot()) != -1)
+    {
+      var oldMonster = team.GetActiveMonsters()[faintedSlot];
+      Debug.Log($"{oldMonster.Nickname} fainted! Forced switch required.");
+
+      // Notify conductor of switch-out
+      conductor.OnMonsterSwitchedOut(oldMonster, team);
+
+      // Get available reserves
+      var availableReserves = team.GetAvailableReserves();
+      if (availableReserves.Count == 0)
+      {
+        // This should never happen - IsBattleOver() should have caught this
+        Debug.LogError($"Team {team.TeamId} has no available reserves but isn't defeated!");
+        return;
+      }
+
+      // For now, pick first available monster
+      // TODO: Ask AI/player to make strategic choice
+      var chosenMonster = availableReserves[0];
+      int switchIndex = team.AllMonsters.IndexOf(chosenMonster);
+
+      // Perform the switch for this specific slot
+      team.SwitchActiveMonster(faintedSlot, switchIndex);
+      Debug.Log($"{oldMonster.Nickname} is recalled!");
+      Debug.Log($"Go, {chosenMonster.Nickname}!");
+
+      // Notify conductor of switch-in
+      conductor.OnMonsterSwitchedIn(chosenMonster, team);
+
+      // TODO: Handle switch-in abilities (this will eventually move to conductor implementations)
+    }
+  }
+
+  /// <summary>
+  /// Executes a battle action (move, switch, item, etc.)
+  /// </summary>
+  private void ExecuteAction(BattleAction action)
+  {
+    switch (action.Type)
+    {
+      case BattleAction.ActionType.Move:
+        ExecuteMove(action.Move, action.Actor, action.Target);
+        break;
+
+      case BattleAction.ActionType.Switch:
+        ExecuteSwitch(action);
+        break;
+
+      case BattleAction.ActionType.Item:
+        // TODO: Implement item logic in future phase
+        Debug.LogWarning("Item action not yet implemented");
+        break;
+
+      case BattleAction.ActionType.Defend:
+        // TODO: Implement defend logic in future phase
+        Debug.LogWarning("Defend action not yet implemented");
+        break;
+
+      case BattleAction.ActionType.Flee:
+        // TODO: Implement flee logic in future phase
+        Debug.LogWarning("Flee action not yet implemented");
+        break;
+
+      case BattleAction.ActionType.EndOfRound:
+        // This is a sentinel value that should never reach ExecuteAction
+        // GetNextAction should intercept it and return null instead
+        Debug.LogError("EndOfRound sentinel reached ExecuteAction - this should never happen!");
+        break;
+
+      default:
+        Debug.LogError($"Unknown action type: {action.Type}");
+        break;
+    }
+  }
+
+  /// <summary>
+  /// Executes a voluntary switch action - player/AI chooses to swap out their active monster.
+  /// Note: Forced switches (when monster faints) are handled by CheckAndHandleForcedSwitches().
+  /// </summary>
+  private void ExecuteSwitch(BattleAction action)
+  {
+    // Determine which team is switching
+    BattleTeam team = GetTeamForMonster(action.Actor);
+
+    if (team == null)
+    {
+      Debug.LogError("Switch action with null Actor - cannot identify team.");
+      return;
+    }
+
+    var oldMonster = team.ActiveMonster;
+    var newMonster = team.AllMonsters[action.SwitchToIndex];
+
+    // Notify conductor of switch-out
+    conductor.OnMonsterSwitchedOut(oldMonster, team);
+
+    // Perform the switch
+    team.SwitchActiveMonster(action.SwitchToIndex);
+
+    Debug.Log($"{oldMonster.Nickname} is recalled!");
+    Debug.Log($"Go, {newMonster.Nickname}!");
+
+    // Notify conductor of switch-in
+    conductor.OnMonsterSwitchedIn(newMonster, team);
+
+    // TODO: Switch-in abilities and effects will eventually be handled in conductor implementations
+  }
+
+  /// <summary>
+  /// Finds which team a monster belongs to
+  /// </summary>
+  private BattleTeam GetTeamForMonster(IMonster monster)
+  {
+    if (monster == null)
+      return null;
+
+    // Check if monster is in player team
+    if (battleModel.playerTeam.AllMonsters.Contains(monster))
+    {
+      return battleModel.playerTeam;
+    }
+
+    // Check if monster is in computer team
+    if (battleModel.computerTeam.AllMonsters.Contains(monster))
+    {
+      return battleModel.computerTeam;
+    }
+
+    return null;
   }
 
   private void ExecuteMove(IMove move, IMonster user, IMonster target)
@@ -122,17 +292,41 @@ public class BattleManager
   private void AnnounceWinner()
   {
     Debug.Log("Battle over");
-    if (battleModel.playerTeam.ActiveMonster.Health > 0)
+    if (!battleModel.playerTeam.IsDefeated())
     {
-      Debug.Log($"{battleModel.playerTeam.ActiveMonster.Nickname} wins!");
+      Debug.Log($"Player team wins!");
+      Debug.Log(
+        $"Remaining monsters: {battleModel.playerTeam.GetRemainingMonsterCount()}/{battleModel.playerTeam.AllMonsters.Count}"
+      );
+    }
+    else if (!battleModel.computerTeam.IsDefeated())
+    {
+      Debug.Log($"Computer team wins!");
+      Debug.Log(
+        $"Remaining monsters: {battleModel.computerTeam.GetRemainingMonsterCount()}/{battleModel.computerTeam.AllMonsters.Count}"
+      );
     }
     else
     {
-      Debug.Log($"{battleModel.computerTeam.ActiveMonster.Nickname} wins!");
+      Debug.Log("Both teams defeated - Draw!");
     }
   }
 
+  /// <summary>
+  /// Gets all monsters from both teams (active + reserves)
+  /// </summary>
   public IMonster[] GetAllMonsters()
+  {
+    var allMonsters = new System.Collections.Generic.List<IMonster>();
+    allMonsters.AddRange(battleModel.playerTeam.AllMonsters);
+    allMonsters.AddRange(battleModel.computerTeam.AllMonsters);
+    return allMonsters.ToArray();
+  }
+
+  /// <summary>
+  /// Gets only the currently active monsters from both teams
+  /// </summary>
+  public IMonster[] GetActiveMonsters()
   {
     return new IMonster[]
     {
@@ -147,7 +341,10 @@ public class BattleManager
   /// </summary>
   private void ApplyMoveResult(MoveResult result)
   {
-    // Apply all target effects
+    // Apply all target effects. This includes:
+    // - Damage/healing
+    // - Status effects
+    // - Attribute de/buffs
     foreach (var targetEffect in result.TargetEffects)
     {
       ApplyTargetEffect(targetEffect);
@@ -179,13 +376,13 @@ public class BattleManager
       return;
     }
 
-    // Apply all attribute deltas
+    // Apply all attribute deltas. Typically damage/healing, but could also be speed changes, etc.
     foreach (KeyValuePair<EMonsterAttribute, int> attributeDelta in effect.AttributeDeltas)
     {
       ApplyAttributeDelta(effect.Target, attributeDelta.Key, attributeDelta.Value);
     }
 
-    // Apply status effects
+    // Apply status effects. Example: Burn, Poison, Sleep, etc.
     foreach (var status in effect.StatusEffectsToApply)
     {
       effect.Target.BattleEffects.AddTag(status.ToStatusString());

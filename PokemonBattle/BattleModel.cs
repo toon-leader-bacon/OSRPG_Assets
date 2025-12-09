@@ -12,6 +12,13 @@ public class BattleModel
 
   public TypeChart typeChart = TypeChart_PokemonGen.buildGen1Chart();
 
+  #region ATB System
+
+  // ATB system support - only used when ATBConductor is active
+  public AtbTimeline atbTimeline = new AtbTimeline();
+
+  #endregion ATB System
+
   public BattleModel(BattleTeam playerTeam, BattleTeam computerTeam)
   {
     // NOTE Team IDs are set by the BattleManager before this constructor is called
@@ -29,12 +36,22 @@ public class BattleModel
 
   public BattleEffects GetBattleEffects(IMonster mon)
   {
-    // TODO: I'm not sure this function really works.
-    // I need a better way to connect IMonster instances to a Battle Team
-    if (playerTeam.ActiveMonster == mon)
+    // Check if monster is in player team (active or reserve)
+    if (playerTeam.AllMonsters.Contains(mon))
     {
       return playerSideEffects;
     }
+
+    // Check if monster is in computer team (active or reserve)
+    if (computerTeam.AllMonsters.Contains(mon))
+    {
+      return computerSideEffects;
+    }
+
+    // Fallback - assume computer side if not found
+    UnityEngine.Debug.LogWarning(
+      $"Monster {mon.Nickname} not found in either team, defaulting to computer side effects"
+    );
     return computerSideEffects;
   }
 }

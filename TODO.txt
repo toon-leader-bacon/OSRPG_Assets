@@ -1,0 +1,418 @@
+================================================================================
+FAMOUS RPG BATTLE SYSTEMS - DESIGN GOALS
+================================================================================
+
+Here are some famous RPGs with their battle styles. We want to eventually make 
+code that supports each of these battles.
+
+
+================================================================================
+BATTLE SYSTEM TERMINOLOGY
+================================================================================
+
+To maintain consistency across our codebase, we use these terms:
+
+**ACTION** - A single move, switch, item use, defend, or flee performed by one
+             combatant. This is the atomic unit of battle activity.
+             Examples: "Tweety uses Tackle", "Switch to Pidgey", "Use Potion"
+
+**TURN** - One combatant taking their action. Each combatant gets turns.
+           In traditional turn-based: "It's the player's turn"
+           In ATB: "Tweety's turn is ready" (when their timer fills)
+
+**ROUND** - A complete cycle where all combatants have had one turn.
+            Only applicable to turn-based systems with synchronized phases.
+            Example in SimpleTurnConductor: Player turn + Computer turn = 1 round
+            NOT applicable to: ATB systems, Timeline systems (no synchronized rounds)
+
+**PHASE** - Generic term for a stage in battle flow. Used in conductor interface
+            to be system-agnostic.
+            - In turn-based (SimpleTurnConductor): Phase = Round
+            - In ATB: Phase might be a time segment
+            - In Timeline: Phase might be after N actions
+
+**Code Usage:**
+- SimpleTurnConductor: Uses "round" (each team acts once per round)
+- IBattleConductor: Uses "phase" (generic, works for all conductor types)
+- BattleManager: Mostly agnostic, processes "actions" from conductor
+
+
+================================================================================
+CATEGORY 1: CLASSIC TURN-BASED (Simultaneous Input, Speed-Based Resolution)
+================================================================================
+
+Pokemon Red/Blue/Yellow (Classic)
+  - 1v1 active combat with reserve team (up to 6 total per side)
+  - Both sides choose actions simultaneously, then resolve by Speed stat
+  - Can switch Pokemon instead of attacking (switching typically happens first)
+  - Priority moves override speed calculations
+
+Pokemon Double Battles
+  - 2v2 active combat from larger teams
+  - Must specify targets for each move (which enemy, or sometimes ally)
+  - Some moves hit multiple targets or all opponents
+  - Speed order calculated across all 4 active combatants
+
+Dragon Quest Series (Traditional Turn-Based)
+  - Party of 3-4 heroes vs group of 1-8 enemies
+  - Input all party commands at start of turn, then all resolve
+  - Speed determines action order within the turn
+  - Simple, predictable, no real-time element
+
+
+================================================================================
+CATEGORY 2: ACTIVE TIME BATTLE (ATB) - Individual Timers
+================================================================================
+
+Final Fantasy IV-IX (ATB - Active Time Battle)
+  - Party of 3-5 members vs multiple enemies (1-8 typical)
+  - Each combatant has individual charge timer that fills continuously
+  - Character acts when their timer fills (real-time or pausable)
+  - Can configure to pause during menu selection or continue running
+
+Chrono Trigger (ATB + Positioning)
+  - Active time system with character positioning on battlefield
+  - Tech system allows combo attacks when multiple timers are ready
+  - No random encounters - enemies visible before battle
+  - Positioning affects some moves (range, AoE targeting)
+
+Grandia Series (Initiative Point / IP Gauge)
+  - Circular IP gauge shows when each combatant will act
+  - Can cancel enemy actions with critical hit timing
+  - Positioning and range matter for physical vs magic
+  - More strategic than standard ATB due to visible future turn order
+
+
+================================================================================
+CATEGORY 3: CONDITIONAL TURN-BASED (Turn Order Queue Systems)
+================================================================================
+
+Final Fantasy X (CTB - Conditional Turn-Based)
+  - Timeline UI shows exact upcoming turn order (next 10+ actions)
+  - Actions cost different amounts of "time" affecting future queue position
+  - Fully turn-based (no real-time pressure) but strategic queue manipulation
+  - Can swap party members freely without consuming turn
+
+Persona 3-5 / Shin Megami Tensei (Press Turn / One More)
+  - Traditional turn-based but with turn economy mechanics
+  - Hit enemy weakness or critical = earn extra action ("One More")
+  - Miss or get blocked = lose turn actions
+  - Incentivizes exploiting weaknesses and covering your own
+
+Child of Light (Active Time with Timeline)
+  - ATB system with visible timeline showing upcoming actions
+  - Can interrupt enemies by hitting them during "casting" phase
+  - Strategic timing to delay enemies or speed up allies
+
+
+================================================================================
+CATEGORY 4: TACTICAL / GRID-BASED (Position Matters Heavily)
+================================================================================
+
+Fire Emblem Series (Tactical Grid)
+  - Grid-based movement with unit positioning
+  - Weapon triangle system (rock/paper/scissors)
+  - Turn-based but army-level (move all units, then enemy moves all)
+  - Permadeath option - fallen units gone permanently
+  
+Final Fantasy Tactics (SRPG - Strategy RPG)
+  - Isometric grid with height/terrain advantages
+  - Charge time system (CT) for actions
+  - Facing matters (attacks from behind deal more damage)
+  - Job/class system with ability combinations
+
+NOTE: Grid-based tactical RPGs require significant additional systems beyond
+our current BattleManager scope. Consider these stretch goals for much later.
+
+
+================================================================================
+CATEGORY 5: ACTION RPG / HYBRID (Real-time with RPG elements)
+================================================================================
+
+Tales Series (Linear Motion Battle System)
+  - Real-time action combat with RPG stats/abilities
+  - Control one character, AI handles party members
+  - Can pause to issue commands or use items
+  - Essentially a fighting game with RPG progression
+
+Kingdom Hearts (Action RPG)
+  - Fully real-time action combat
+  - Party members are AI-controlled unless given commands
+  - Command menu selection (somewhat turn-based feel in real-time)
+  - More action game than traditional RPG
+
+NOTE: Action RPG systems are fundamentally different architecture.
+Would require completely separate battle system. Consider out of scope.
+
+
+================================================================================
+REFACTORING STRATEGY FOR BATTLEMANAGER
+================================================================================
+
+GOAL: Make BattleManager support Categories 1-3 (Turn-Based, ATB, CTB)
+      Category 4 (Tactical) is stretch goal requiring major expansion
+      Category 5 (Action) is out of scope - needs different architecture
+
+
+CURRENT PROBLEMS (as of Phase 1 completion):
+--------------------------------------------
+RESOLVED via conductor pattern:
+  ✓ 2. Simultaneous move submission (both sides choose before execution)
+       → Now handled by SimpleTurnConductor, can be changed by swapping conductors
+  ✓ 3. Simple speed-based ordering (higher Speed = go first)
+       → Now handled by conductor, different conductors can use different ordering
+  ✓ 4. Turn = exactly 2 moves (one per side, then repeat)
+       → Conductor pattern allows flexible action counts per phase
+  ✓ 8. No timeline/queue visibility
+       → Conductors can expose their queue/timeline for UI (future work)
+
+STILL REMAINING (require further phases):
+  1. Only 1v1 combat (single ActiveMonster per team) → Phase 3
+     ✓ PARTIAL: Now supports 6v6 teams with 1 active (Phase 2.5 complete)
+     ⚠ REMAINING: Multiple active monsters simultaneously (2v2, party battles)
+  5. Battle ends when single monster reaches 0 HP
+     ✓ RESOLVED: Victory conditions now check if entire team is defeated (Phase 2.5)
+  6. No monster switching mid-battle
+     ✓ PARTIAL: Forced switches work when monster faints (Phase 2.5)
+     ⚠ REMAINING: Voluntary switches (AI chooses to switch as an action)
+  7. No multi-target moves or area effects → Phase 3
+
+
+IMPLEMENTED SOLUTION: Extract Battle Flow Logic → IBattleConductor
+-------------------------------------------------------------------
+
+Created interface: IBattleConductor [COMPLETED]
+
+This interface handles:
+  - When to collect moves from AI/players
+  - What order to execute actions in
+  - When a "turn" or "phase" ends
+  - Additional logic like ATB timers, turn queues, etc.
+
+Interface methods:
+  void Initialize(BattleModel model)
+    - Set up any flow-specific state (timers, queues, etc.)
+  
+  BattleAction GetNextAction()
+    - Returns the next action to execute
+    - Returns null when current phase is complete
+  
+  bool IsBattleOver()
+    - Check victory/defeat conditions
+    - May vary by battle type
+  
+  void ProcessEndOfPhase()
+    - Handle end-of-turn effects (poison damage, weather, etc.)
+
+
+IMPLEMENTATION CLASSES:
+-----------------------
+
+1. SimpleTurnConductor (Pokemon Red - Current System)
+   - Collect one move from each side
+   - Sort by Speed stat
+   - Execute in order
+   - Check for battle end
+
+2. DoubleBattleConductor (Pokemon Double Battle)
+   - Collect moves from 2 active monsters per side
+   - Handle target selection (which of 2 enemies?)
+   - Sort all 4 actions by Speed
+   - Execute in order
+
+3. PartyBattleConductor (Dragon Quest Style)
+   - Collect moves from all party members (3-5 typically)
+   - Collect moves from all enemies (variable count)
+   - Sort by Speed
+   - Execute all actions
+   - Process end-of-turn (status effects, etc.)
+
+4. ATBConductor (Final Fantasy 4-9)
+   - Maintain ATB timer for each combatant
+   - Tick timers (in Update loop or coroutine)
+   - When timer fills, request move from AI for that character
+   - Execute action immediately
+   - No traditional "turn" concept
+
+5. TimelineConductor (Final Fantasy X / Grandia)
+   - Maintain priority queue of upcoming actions
+   - Actions have "time cost" that affects queue position
+   - Pop next action from queue, execute
+   - Recalculate queue after each action
+   - Can display future N actions to player
+
+6. PressTurnConductor (Persona / SMT)
+   - Track "turn economy" (bonus turns earned, turns lost)
+   - Award extra action on weakness/crit
+   - Penalize on miss/block
+   - Requires move result to determine if another action is granted
+
+
+ADDITIONAL REFACTORING NEEDS:
+------------------------------
+
+A. BattleAction Class
+   Currently we only have IMove. Need broader "action" concept:
+   - Move (attack/ability)
+   - Switch (swap active monster)
+   - Item (use consumable)
+   - Defend (reduce damage taken)
+   - Flee (attempt to escape)
+   
+   class BattleAction {
+     ActionType type;
+     IMonster actor;
+     IMonster target; // or List<IMonster> for multi-target
+     IMove move; // if type == Move
+     int itemId; // if type == Item
+     int switchToIndex; // if type == Switch
+   }
+
+B. Multi-Target Support
+   Moves need to support:
+   - Single target (current)
+   - All enemies
+   - All allies
+   - Random target
+   - Self only
+   - All combatants (both teams)
+   
+   ExecuteMove() needs to handle applying effects to multiple targets
+
+C. Victory Condition System
+   Different battle types have different win conditions:
+   - All enemies at 0 HP (most common)
+   - Boss monster at 0 HP (others don't matter)
+   - Survive N turns
+   - Reduce enemy HP below threshold
+   - Protect NPC (if they die, you lose)
+   
+   Should be configurable per battle
+
+D. Monster Switching
+   Need first-class support for swapping active monster:
+   - Select from reserve
+   - Handle timing (instant vs turn cost)
+   - What happens if active monster is KO'd? (forced switch)
+
+E. BattleModel Expansion
+   Currently assumes single active monster per team.
+   Need to support:
+   - List of active monsters (for double battles, parties)
+   - Reserve/bench monsters
+   - Access by index or ID
+   
+   Interface additions:
+     List<IMonster> GetActiveMonsters(BattleTeam team)
+     List<IMonster> GetReserveMonsters(BattleTeam team)
+     void SwitchMonster(BattleTeam team, int activeSlot, int reserveIndex)
+
+
+MIGRATION STRATEGY:
+-------------------
+
+CURRENT STATUS: Phase 1 Complete, Phase 2.5 Complete (Multi-Monster Support)
+  Files Created:
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleConductors/IBattleConductor.cs
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleConductors/BattleAction.cs
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleConductors/SimpleTurnConductor.cs
+  
+  Files Modified:
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleManager.cs
+      (now uses conductor pattern, delegates turn flow to IBattleConductor)
+      (implements ExecuteSwitch, GetTeamForMonster, updated victory conditions)
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleTeam.cs
+      (supports multiple monsters with List<IMonster>, switching, IsDefeated check)
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/BattleModel.cs
+      (GetBattleEffects works with all monsters in team)
+    - Assets/Scripts/OSRPG_Assets/PokemonBattle/Blab_PokemonBattle.cs
+      (demo updated to 6v6 battle)
+
+Phase 1: Extract SimpleTurnConductor [COMPLETED]
+  ✓ Create IBattleConductor interface
+  ✓ Implement SimpleTurnConductor with current logic
+  ✓ Refactor BattleManager to use it
+  ⚠ Ensure existing battles still work (compiles successfully, needs runtime testing)
+
+Phase 2: Add BattleAction System [COMPLETED]
+  ✓ Create BattleAction class (includes all action types: Move, Switch, Item, Defend, Flee)
+  ✓ Modify conductors to work with actions instead of just moves
+  ✓ BattleManager handles different action types via ExecuteAction()
+
+Phase 2.5: Multi-Monster Teams (6v6 with 1 active) [COMPLETED]
+  ✓ Extend BattleTeam to support List<IMonster> with activeMonsterIndex
+  ✓ Add switching methods: SwitchActiveMonster(), GetReserveMonsters(), GetAvailableReserves()
+  ✓ Add team defeat checking: IsDefeated(), GetRemainingMonsterCount(), NeedsForcedSwitch()
+  ✓ SimpleTurnConductor handles forced switches when active monster faints
+  ✓ SimpleTurnConductor checks team defeat (not just active monster HP)
+  ✓ Implement ExecuteSwitch() in BattleManager
+  ✓ Update BattleModel.GetBattleEffects() to work with all team monsters
+  ✓ Update victory announcements to show team stats
+  ✓ Test scene updated to 6v6 battle (12 total monsters)
+  
+  NOTES:
+    - Forced switches happen immediately after a monster faints
+    - AI currently picks first available reserve (no strategic choice yet)
+    - IBattleAI still returns IMove (not BattleAction) - voluntary switches deferred
+  
+  REMAINING FOR VOLUNTARY SWITCHES (Next Phase):
+    - Update IBattleAI.GetMove() -> GetAction() to return BattleAction
+    - AI can choose to switch voluntarily (costs a turn)
+    - Implement ExecuteItem(), ExecuteDefend(), ExecuteFlee() in BattleManager
+
+Phase 3: Implement Multi-Active Monster Support (Double Battles, Party Battles) [COMPLETED]
+  ✓ Expand BattleModel to track multiple active monsters
+  ✓ Create PartyBattleConductor (supports any N vs M configuration)
+  ✓ Create DoubleBattleConductor (specialized wrapper enforcing 2v2 battles)
+
+Phase 4: Add ATB System [COMPLETED]
+  ✓ Create AtbTimeline and AtbGaugeState (data model for gauge tracking)
+  ✓ Create ITimeDrivenConductor interface (for conductors requiring time advancement)
+  ✓ Create ATBConductor with Tick(deltaTime) system
+  ✓ Integrate with BattleManager (auto-detect time-driven conductors)
+  ✓ Implement Wait Mode / Active Mode (pause during player input)
+  ✓ Handle forced switches (reset gauges appropriately)
+  ✓ Support multi-active ATB battles (each monster has independent gauge)
+  ✓ Create test scripts: Test_ATBBattle, Test_ATBPartyBattle, Test_ATBVerbose
+  ✓ Document ATB system in README_ATB.md
+  
+  NOTES:
+    - BattleManager uses simulated time loop (Thread.Sleep) for headless tests
+    - In real Unity game, MonoBehaviour.Update() would drive Tick() calls
+    - Player input currently handled by AI; UI integration pending
+    - Speed stat directly determines charge rate (100 speed = 1 sec fill time)
+  
+  REMAINING FOR FUTURE:
+    - Real player input via UI (SubmitPlayerAction hook exists)
+    - Cast time support (actions take time to execute)
+    - Global pause/resume for menus
+    - Haste/Slow status effects (modify ChargeRate multiplier)
+    - Visual gauge UI in Unity
+
+Phase 5: Timeline/Queue Systems
+  - Implement TimelineConductor
+  - Create UI for showing future turn order (separate concern)
+
+Phase 6: Advanced Mechanics
+  - PressTurnConductor (turn economy)
+  - Complex victory conditions
+  - Status effects that interact with flow (paralysis, sleep)
+
+
+OPEN QUESTIONS:
+---------------
+1. Should conductors be responsible for calling AI.GetMove(), 
+   or should BattleManager still do that?
+   
+2. How do we handle animation timing? Conductor shouldn't wait
+   for animations, but we need actions to execute sequentially in view.
+   
+3. Should victory conditions be part of conductor or separate?
+
+4. How do we handle speed ties? Random? Player advantage? Configurable?
+
+5. For ATB, do we need separate Update() loop or can we use coroutines?
+
+
+================================================================================
+
