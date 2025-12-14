@@ -13,9 +13,8 @@ public class City
     this.position = position;
   }
 
-  public City(int position_X, int position_Y) :
-    this(new Vector2Int(position_X, position_Y))
-  { }
+  public City(int position_X, int position_Y)
+    : this(new Vector2Int(position_X, position_Y)) { }
 
   public void insertRoad(Road newRoad, CardinalDirection direction)
   {
@@ -26,6 +25,7 @@ public class City
   {
     return this.roads.ContainsKey(direction);
   }
+
   public bool directionUnoccupied(CardinalDirection direction)
   {
     return !this.directionOccupied(direction);
@@ -48,7 +48,7 @@ public class City
       CardinalDirection.North,
       CardinalDirection.East,
       CardinalDirection.South,
-      CardinalDirection.West
+      CardinalDirection.West,
     };
 
     foreach (CardinalDirection direction in this.roads.Keys)
@@ -57,5 +57,21 @@ public class City
     }
 
     return result;
+  }
+
+  /// <summary>
+  /// Gets the road connected in the specified direction, if any.
+  /// </summary>
+  public Road GetRoad(CardinalDirection direction)
+  {
+    return roads.ContainsKey(direction) ? roads[direction] : null;
+  }
+
+  /// <summary>
+  /// Gets all roads connected to this city.
+  /// </summary>
+  public List<Road> GetAllRoads()
+  {
+    return new List<Road>(roads.Values);
   }
 }

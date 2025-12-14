@@ -2,17 +2,19 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class ElbowLine
 {
-
   public enum ElbowTypes
   {
-    OneTurn = 1,
-    TwoTurn = 2
+    OneTurn = 1, // L shape
+    TwoTurn = 2, // S shape
   }
-  public static readonly List<ElbowTypes> AllElbowTypes = new() {
-    ElbowTypes.OneTurn, ElbowTypes.TwoTurn };
+
+  public static readonly List<ElbowTypes> AllElbowTypes = new()
+  {
+    ElbowTypes.OneTurn,
+    ElbowTypes.TwoTurn,
+  };
 
   readonly NocabRNG rng;
 
@@ -32,11 +34,18 @@ public class ElbowLine
 
   #region Connect Points
 
-  public static List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end, bool startHorizontal, ElbowTypes connectionType)
+  public static List<Vector2Int> ConnectPoints(
+    Vector2Int start,
+    Vector2Int end,
+    bool startHorizontal,
+    ElbowTypes connectionType
+  )
   {
     // Vertical or Horizontal line
     if (start.x == end.x || start.y == end.y)
-    { return NocabPixelLine.getPointsAlongLine(start, end); }
+    {
+      return NocabPixelLine.getPointsAlongLine(start, end);
+    }
 
     switch (connectionType)
     {
@@ -48,17 +57,31 @@ public class ElbowLine
     }
   }
 
-  public static List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end, bool startHorizontal, NocabRNG rng)
+  public static List<Vector2Int> ConnectPoints(
+    Vector2Int start,
+    Vector2Int end,
+    bool startHorizontal,
+    NocabRNG rng
+  )
   {
     // Vertical or Horizontal line
     if (start.x == end.x || start.y == end.y)
-    { return NocabPixelLine.getPointsAlongLine(start, end); }
+    {
+      return NocabPixelLine.getPointsAlongLine(start, end);
+    }
 
     return ConnectPoints(start, end, startHorizontal, rng.randomElem(AllElbowTypes));
   }
 
-  public static List<Vector2Int> ConnectPoints_static(Vector2Int start, Vector2Int end, bool startHorizontal)
-  { return ConnectPoints(start, end, startHorizontal, NocabRNG.defaultRNG); }
+  public static List<Vector2Int> ConnectPoints_static(
+    Vector2Int start,
+    Vector2Int end,
+    bool startHorizontal
+  )
+  {
+    return ConnectPoints(start, end, startHorizontal, NocabRNG.defaultRNG);
+  }
+
   public static List<Vector2Int> ConnectPoints_static(Vector2Int start, Vector2Int end)
   {
     NocabRNG rng = NocabRNG.defaultRNG;
@@ -66,23 +89,30 @@ public class ElbowLine
   }
 
   public List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end, bool startHorizontal)
-  { return ConnectPoints(start, end, startHorizontal, this.rng); }
+  {
+    return ConnectPoints(start, end, startHorizontal, this.rng);
+  }
 
   public List<Vector2Int> ConnectPoints(Vector2Int start, Vector2Int end)
-  { return ConnectPoints(start, end, this.rng.generateBool()); }
+  {
+    return ConnectPoints(start, end, this.rng.generateBool());
+  }
 
-  #endregion 
+  #endregion
 
   #region OneTurn
   public List<Vector2Int> OneTurn(Vector2Int start, Vector2Int end)
-  { return OneTurn(start, end, rng.generateBool()); }
+  {
+    return OneTurn(start, end, rng.generateBool());
+  }
 
   public static List<Vector2Int> OneTurn_static(Vector2Int start, Vector2Int end)
-  { return OneTurn(start, end, NocabRNG.defaultRNG.generateBool()); }
+  {
+    return OneTurn(start, end, NocabRNG.defaultRNG.generateBool());
+  }
 
   public static List<Vector2Int> OneTurn(Vector2Int start, Vector2Int end, bool startHorizontal)
   {
-
     if (start.x == end.x || start.y == end.y)
     {
       // Vertical or Horizontal line
@@ -90,9 +120,7 @@ public class ElbowLine
       return NocabPixelLine.getPointsAlongLine(start, end);
     }
 
-    Box2D box = new(start.x, start.y,
-                      end.x, end.y,
-                      positiveYDown: false);
+    Box2D box = new(start.x, start.y, end.x, end.y, positiveYDown: false);
 
     Vector2Int elbowPt;
 
@@ -139,11 +167,7 @@ public class ElbowLine
       }
     }
 
-    return PixelArtShapes.ConnectTheDots(new List<Vector2Int>{
-      start,
-      elbowPt,
-      end
-    });
+    return PixelArtShapes.ConnectTheDots(new List<Vector2Int> { start, elbowPt, end });
   }
 
   #endregion
@@ -151,10 +175,14 @@ public class ElbowLine
   #region TwoTurn
 
   public List<Vector2Int> TwoTurn(Vector2Int start, Vector2Int end)
-  { return TwoTurn(start, end, this.rng.generateBool()); }
+  {
+    return TwoTurn(start, end, this.rng.generateBool());
+  }
 
   public static List<Vector2Int> TwoTurn_static(Vector2Int start, Vector2Int end)
-  { return TwoTurn(start, end, NocabRNG.defaultRNG.generateBool()); }
+  {
+    return TwoTurn(start, end, NocabRNG.defaultRNG.generateBool());
+  }
 
   public static List<Vector2Int> TwoTurn(Vector2Int start, Vector2Int end, bool startHorizontal)
   {
@@ -170,7 +198,7 @@ public class ElbowLine
 
     if (startHorizontal)
     {
-      // Go horizontally (pos x direction) then at a certain point cut up 
+      // Go horizontally (pos x direction) then at a certain point cut up
       int deltaX = end.x - start.x;
       float percentage = NocabRNG.defaultRNG.generateFloat(0.333f, 0.666f);
       int cutAcrossX = start.x + ((int)(deltaX * percentage));
@@ -190,13 +218,7 @@ public class ElbowLine
       pt2 = new(end.x, cutAcrossY);
     }
 
-    return PixelArtShapes.ConnectTheDots(new List<Vector2Int>{
-      start,
-      pt1,
-      pt2,
-      end
-    });
-
+    return PixelArtShapes.ConnectTheDots(new List<Vector2Int> { start, pt1, pt2, end });
   }
 
   #endregion

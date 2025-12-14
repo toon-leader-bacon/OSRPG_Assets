@@ -1,16 +1,13 @@
-
-
-using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEngine.Tilemaps;
-using UnityEngine;
-using System.IO;
-using UnityEditor;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using Unity.VisualScripting;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class SmartPathTileLookup
 {
-
   Dictionary<int, TileBase> tileBases = new();
 
   public SmartPathTileLookup(string assetDirPath)
@@ -40,7 +37,9 @@ public class SmartPathTileLookup
     string[] ids = fileName.Split('_');
     if (ids.Length <= 1)
     {
-      Debug.LogWarning($"Could not load tile asset \'{fileName}\' is mislabeled (expected \'_\' character)");
+      Debug.LogWarning(
+        $"Could not load tile asset \'{fileName}\' is mislabeled (expected \'_\' character)"
+      );
       return;
     }
     string connections = ids[1];
@@ -56,14 +55,17 @@ public class SmartPathTileLookup
   int getHash(string connections)
   {
     HashSet<char> chars = new HashSet<char>(connections.Length);
-    foreach (char c in connections) { chars.Add(c); }
+    foreach (char c in connections)
+    {
+      chars.Add(c);
+    }
 
     bool up = chars.Contains('u');
     bool down = chars.Contains('d');
     bool left = chars.Contains('l');
     bool right = chars.Contains('r');
 
-    // Order MUST match other getHash functions 
+    // Order MUST match other getHash functions
     int hash = NocabHashUtility.hashBools(up, down, left, right);
     return hash;
   }
@@ -75,9 +77,8 @@ public class SmartPathTileLookup
     bool left = neighbors.Contains(CardinalDirection.West);
     bool right = neighbors.Contains(CardinalDirection.East);
 
-    // Order MUST match other getHash functions 
+    // Order MUST match other getHash functions
     int hash = NocabHashUtility.hashBools(up, down, left, right);
     return hash;
   }
-
 }

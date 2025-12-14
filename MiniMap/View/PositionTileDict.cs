@@ -4,10 +4,11 @@ using UnityEngine.Tilemaps;
 
 public class PositionTileDict : Dictionary<Vector2Int, TileBase>
 {
+  public PositionTileDict(int capacity)
+    : base(capacity) { }
 
-  public PositionTileDict(int capacity) : base(capacity) { }
-  public PositionTileDict() : base() { }
-
+  public PositionTileDict()
+    : base() { }
 
   public void AddRoad(Road r, TileBase tb)
   {
@@ -89,11 +90,13 @@ public class TileLaydownLinter
       bool leftNeighbor = tiles.ContainsKey(pos + Vector2Int.left);
       bool rightNeighbor = tiles.ContainsKey(pos + Vector2Int.right);
     }
-
   }
 
-
-  private HashSet<Vector2Int> FindLineFromTile(PositionTileDict tiles, Vector2Int position, Vector2Int direction)
+  private HashSet<Vector2Int> FindLineFromTile(
+    PositionTileDict tiles,
+    Vector2Int position,
+    Vector2Int direction
+  )
   {
     HashSet<Vector2Int> linePositions = new();
     Vector2Int currentPosition = position;
@@ -114,10 +117,14 @@ public class TileLaydownLinter
     return linePositions;
   }
 
-  private HashSet<Vector2Int> FindHorizontalLineFromTile(PositionTileDict tiles, Vector2Int position)
+  private HashSet<Vector2Int> FindHorizontalLineFromTile(
+    PositionTileDict tiles,
+    Vector2Int position
+  )
   {
     return FindLineFromTile(tiles, position, Vector2Int.right);
   }
+
   private HashSet<Vector2Int> FindVerticalLineFromTile(PositionTileDict tiles, Vector2Int position)
   {
     return FindLineFromTile(tiles, position, Vector2Int.up);
