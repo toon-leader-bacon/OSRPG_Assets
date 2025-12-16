@@ -1,21 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Unity.Burst.CompilerServices;
 using Unity.Mathematics;
-using Unity.VisualScripting;
-using Unity.VisualScripting.Dependencies.Sqlite;
-using UnityEditor.Playables;
 using UnityEngine;
 using CD_Util = CardinalDirection_Util;
 
 public class MinimapAuthorLoop_Polygon
 {
   readonly NocabRNG rng;
+  readonly AuthorUtilities authorUtil;
 
   public MinimapAuthorLoop_Polygon(NocabRNG rng)
   {
     this.rng = rng;
+    this.authorUtil = new AuthorUtilities(rng);
   }
 
   public MinimapAuthorLoop_Polygon()
@@ -35,21 +32,11 @@ public class MinimapAuthorLoop_Polygon
     List<City> cornerCities = getCityPositions_Corners(loopWidth, loopHeight, numSides);
     List<Road> roads = new();
     City previousCorner = cornerCities[cornerCities.Count - 1];
-    foreach (var cornerCity in cornerCities)
+    foreach (var currentCorner in cornerCities)
     {
-      // Connect the previous city to the current city
-      (HashSet<CardinalDirection> exitDirectionsA, HashSet<CardinalDirection> enterDirectionsB) =
-        getEnterExitDirections(previousCorner, cornerCity);
-      Road road = connectCities(
-        previousCorner,
-        cornerCity,
-        exitDirectionsA,
-        enterDirectionsB,
-        ElbowLine.ElbowTypes.TwoTurn
-      );
+      Road road = authorUtil.connectCities_Automatic(previousCorner, currentCorner);
       roads.Add(road);
-
-      previousCorner = cornerCity;
+      previousCorner = currentCorner;
     }
 
     return (cornerCities, roads);
@@ -72,15 +59,16 @@ public class MinimapAuthorLoop_Polygon
     foreach (var edgeCity in edgeCities)
     {
       // Connect the previous city to the current city
-      (HashSet<CardinalDirection> exitDirectionsA, HashSet<CardinalDirection> enterDirectionsB) =
-        getEnterExitDirections(previousEdge, edgeCity);
-      Road road = connectCities(
-        previousEdge,
-        edgeCity,
-        exitDirectionsA,
-        enterDirectionsB,
-        ElbowLine.ElbowTypes.TwoTurn
-      );
+      // (HashSet<CardinalDirection> exitDirectionsA, HashSet<CardinalDirection> enterDirectionsB) =
+      //   getEnterExitDirections(previousEdge, edgeCity);
+      // Road road = authorUtil.connectCities(
+      //   previousEdge,
+      //   edgeCity,
+      //   exitDirectionsA,
+      //   enterDirectionsB,
+      //   ElbowLine.ElbowTypes.TwoTurn
+      // );
+      Road road = authorUtil.connectCities_Automatic(previousEdge, edgeCity);
       roads.Add(road);
 
       previousEdge = edgeCity;
@@ -203,85 +191,6 @@ public class MinimapAuthorLoop_Polygon
     return result;
   }
 
-  protected Road connectCities(
-    City cityA,
-    City cityB,
-    HashSet<CardinalDirection> exitDirectionsA,
-    HashSet<CardinalDirection> enterDirectionsB,
-    ElbowLine.ElbowTypes roadType
-  )
-  {
-    /**
-     * Connect two cities with a road.
-     * Return the road object.
-     *
-     * This method will create an ElbowLine road between the two cities.
-     * The exit and enter directions are intersected with the unoccupied directions of the cities.
-     * If no compatible directions are found, an exception is thrown.
-     *
-     * The exit tile is the position of the city plus the exit direction. For example
-     * if the city is at (0,0) and the exit direction is North, the first tile of the road will be (0,1).
-     *
-     * @param cityA - The city to connect from.
-     * @param cityB - The city to connect to.
-     * @param exitDirectionsA - The directions that city A can exit from.
-     * @param enterDirectionsB - The directions that city B can enter from.
-     * @param roadType - The type of road to create.
-     * @return The road object.
-     *
-     * WARNING: If the cities and the provided directions are not compatible, this will throw an exception.
-     * @throws Exception if the cities and the provided directions are not compatible.
-     */
-    exitDirectionsA.IntersectWith(cityA.UnoccupiedDirections());
-    if (exitDirectionsA.Count == 0)
-    {
-      throw new Exception("No compatible exit directions found for city A.");
-    }
-    CardinalDirection AExitDirection = rng.randomElem_Set(exitDirectionsA);
-    Vector2Int AExitTile = cityA.position + CD_Util.GetVector(AExitDirection);
-
-    enterDirectionsB.IntersectWith(cityB.UnoccupiedDirections());
-    if (enterDirectionsB.Count == 0)
-    {
-      throw new Exception("No compatible enter directions found for city B.");
-    }
-    CardinalDirection BEnterDirection = rng.randomElem_Set(enterDirectionsB);
-    Vector2Int BEnterTile = cityB.position + CD_Util.GetVector(BEnterDirection);
-
-    Road road;
-    switch (roadType)
-    {
-      case ElbowLine.ElbowTypes.OneTurn:
-        road = new(ElbowLine.OneTurn_static(AExitTile, BEnterTile));
-        break;
-      case ElbowLine.ElbowTypes.TwoTurn:
-        road = new(ElbowLine.TwoTurn_static(AExitTile, BEnterTile));
-        break;
-      default:
-        throw new Exception("Invalid road type.");
-    }
-    cityA.insertRoad(road, AExitDirection);
-    cityB.insertRoad(road, BEnterDirection);
-    return road;
-  }
-
-  protected Road connectCities(
-    City cityA,
-    City cityB,
-    HashSet<CardinalDirection> exitDirectionsA,
-    HashSet<CardinalDirection> enterDirectionsB
-  )
-  {
-    // See full method for documentation
-    return connectCities(
-      cityA,
-      cityB,
-      exitDirectionsA,
-      enterDirectionsB,
-      rng.randomElem(ElbowLine.AllElbowTypes)
-    );
-  }
-
   private (
     HashSet<CardinalDirection> exitDirectionsA,
     HashSet<CardinalDirection> enterDirectionsB
@@ -305,15 +214,15 @@ public class MinimapAuthorLoop_Polygon
     // North/South (same Y gets both)
     if (cityA.position.y >= cityB.position.y)
     {
-      // If city A is south of City B, then A can exit north into B enter south.
-      exitDirectionsA.Add(CardinalDirection.North);
-      enterDirectionsB.Add(CardinalDirection.South);
+      // If city A is north of City B, then A can exit south into B enter north.
+      exitDirectionsA.Add(CardinalDirection.South);
+      enterDirectionsB.Add(CardinalDirection.North);
     }
     if (cityA.position.y <= cityB.position.y)
     {
       // If city A is south of City B, then A can exit north into B enter south.
-      exitDirectionsA.Add(CardinalDirection.South);
-      enterDirectionsB.Add(CardinalDirection.North);
+      exitDirectionsA.Add(CardinalDirection.North);
+      enterDirectionsB.Add(CardinalDirection.South);
     }
 
     // East/West (Same X gets both)
