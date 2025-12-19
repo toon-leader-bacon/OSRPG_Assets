@@ -150,7 +150,7 @@ public class MinimapBuilder : MonoBehaviour
       : (isCityAFirst ? CardinalDirection.East : CardinalDirection.West);
 
     // The road entering city B is always just the opposite of that leaving city A
-    CardinalDirection enteringB = CardinalDirection_Util.opposite(leavingA);
+    CardinalDirection enteringB = CardinalDirection_Util.Opposite(leavingA);
 
     cityA.insertRoad(r, leavingA);
     cityB.insertRoad(r, enteringB);
@@ -190,8 +190,8 @@ public class MinimapBuilder : MonoBehaviour
     Debug.Log($"cityAVert = {cityAVert}");
 
     // City B is always in the opposite corner of city A
-    CardinalDirection cityBHoriz = CardinalDirection_Util.opposite(cityAHoriz);
-    CardinalDirection cityBVert = CardinalDirection_Util.opposite(cityAVert);
+    CardinalDirection cityBHoriz = CardinalDirection_Util.Opposite(cityAHoriz);
+    CardinalDirection cityBVert = CardinalDirection_Util.Opposite(cityAVert);
 
     // Step 2: Consider what road slots in the cities are already taken.
     // To help visualize: Assume cityA is (1,1) and cityB is (3, 5)
@@ -253,7 +253,7 @@ public class MinimapBuilder : MonoBehaviour
           + $"Position of CityA: {cityA.position}\n"
           + $"Position of CityB: {cityB.position}"
       );
-      return new(new());
+      return new Road(new List<Vector2Int>());
     }
 
     // All possible paths have been generated. Select one, generate it

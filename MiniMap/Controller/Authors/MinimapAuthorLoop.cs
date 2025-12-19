@@ -8,14 +8,19 @@ public class MinimapAuthorLoop
   readonly NocabRNG rng;
   readonly AuthorUtilities authorUtil;
 
-  public MinimapAuthorLoop(NocabRNG rng)
+  private int XWiggleDelta;
+  private int YWiggleDelta;
+
+  public MinimapAuthorLoop(NocabRNG rng, int xWiggleDelta = 0, int yWiggleDelta = 0)
   {
     this.rng = rng;
     this.authorUtil = new AuthorUtilities(rng);
+    this.XWiggleDelta = Mathf.Abs(xWiggleDelta);
+    this.YWiggleDelta = Mathf.Abs(yWiggleDelta);
   }
 
-  public MinimapAuthorLoop()
-    : this(NocabRNG.defaultRNG) { }
+  public MinimapAuthorLoop(int xWiggleDelta = 0, int yWiggleDelta = 0)
+    : this(NocabRNG.defaultRNG, xWiggleDelta, yWiggleDelta) { }
 
   public (List<City>, List<Road>) GenerateLoop_CitiesAtCorners(int loopWidth, int loopHeight)
   {
@@ -199,7 +204,9 @@ public class MinimapAuthorLoop
     City BL = new(leftEdgeX, bottomEdgeY);
     City BR = new(rightEdgeX, bottomEdgeY);
 
-    return new() { TL, TR, BL, BR };
+    List<City> cities = new() { TL, TR, BL, BR };
+    cities = authorUtil.wiggleCityPositions(cities, XWiggleDelta, YWiggleDelta);
+    return cities;
   }
 
   protected List<City> getCityPositions_Edges(int loopWidth, int loopHeight)
@@ -251,6 +258,8 @@ public class MinimapAuthorLoop
     );
     City leftCity = new(leftCityX, leftCityY);
 
-    return new() { topCity, bottomCity, rightCity, leftCity };
+    List<City> cities = new() { topCity, bottomCity, rightCity, leftCity };
+    cities = authorUtil.wiggleCityPositions(cities, XWiggleDelta, YWiggleDelta);
+    return cities;
   }
 }

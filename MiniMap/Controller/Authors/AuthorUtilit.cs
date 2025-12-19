@@ -18,6 +18,27 @@ public class AuthorUtilities
     this.rng = rng;
   }
 
+  public List<City> wiggleCityPositions(List<City> cities, int xWiggleDelta, int yWiggleDelta)
+  {
+    if (xWiggleDelta == 0 && yWiggleDelta == 0)
+    {
+      return cities;
+    }
+    xWiggleDelta = math.abs(xWiggleDelta);
+    yWiggleDelta = math.abs(yWiggleDelta);
+    List<City> wiggedCities = new();
+    foreach (City city in cities)
+    {
+      wiggedCities.Add(
+        new City(
+          city.position.x + rng.generateInt(-xWiggleDelta, xWiggleDelta),
+          city.position.y + rng.generateInt(-yWiggleDelta, yWiggleDelta)
+        )
+      );
+    }
+    return wiggedCities;
+  }
+
   public Road connectCities(
     City cityA,
     City cityB,

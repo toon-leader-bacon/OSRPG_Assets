@@ -180,7 +180,7 @@ public class MinimapAuthoringController
       ? (isCityAFirst ? CardinalDirection.North : CardinalDirection.South)
       : (isCityAFirst ? CardinalDirection.East : CardinalDirection.West);
 
-    CardinalDirection enteringB = CardinalDirection_Util.opposite(leavingA);
+    CardinalDirection enteringB = CardinalDirection_Util.Opposite(leavingA);
 
     cityA.insertRoad(r, leavingA);
     cityB.insertRoad(r, enteringB);
@@ -212,8 +212,8 @@ public class MinimapAuthoringController
       ? CardinalDirection.South
       : CardinalDirection.North;
 
-    CardinalDirection cityBHoriz = CardinalDirection_Util.opposite(cityAHoriz);
-    CardinalDirection cityBVert = CardinalDirection_Util.opposite(cityAVert);
+    CardinalDirection cityBHoriz = CardinalDirection_Util.Opposite(cityAHoriz);
+    CardinalDirection cityBVert = CardinalDirection_Util.Opposite(cityAVert);
 
     // Generate possible roads
     List<Tuple<bool, ElbowLine.ElbowTypes, CardinalDirection, CardinalDirection>> possibleRoads =

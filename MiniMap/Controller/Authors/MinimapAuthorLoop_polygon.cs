@@ -8,15 +8,19 @@ public class MinimapAuthorLoop_Polygon
 {
   readonly NocabRNG rng;
   readonly AuthorUtilities authorUtil;
+  private int XWiggleDelta;
+  private int YWiggleDelta;
 
-  public MinimapAuthorLoop_Polygon(NocabRNG rng)
+  public MinimapAuthorLoop_Polygon(NocabRNG rng, int xWiggleDelta = 0, int yWiggleDelta = 0)
   {
     this.rng = rng;
     this.authorUtil = new AuthorUtilities(rng);
+    this.XWiggleDelta = Mathf.Abs(xWiggleDelta);
+    this.YWiggleDelta = Mathf.Abs(yWiggleDelta);
   }
 
-  public MinimapAuthorLoop_Polygon()
-    : this(NocabRNG.defaultRNG) { }
+  public MinimapAuthorLoop_Polygon(int xWiggleDelta = 0, int yWiggleDelta = 0)
+    : this(NocabRNG.defaultRNG, xWiggleDelta, yWiggleDelta) { }
 
   public (List<City>, List<Road>) GenerateLoop_CitiesAtCorners(
     int loopWidth,
@@ -130,6 +134,7 @@ public class MinimapAuthorLoop_Polygon
       corners.Add(new City(x, y));
     }
 
+    corners = authorUtil.wiggleCityPositions(corners, XWiggleDelta, YWiggleDelta);
     return corners;
   }
 
@@ -188,6 +193,8 @@ public class MinimapAuthorLoop_Polygon
 
       previousCorner = currentCorner;
     }
+
+    result = authorUtil.wiggleCityPositions(result, XWiggleDelta, YWiggleDelta);
     return result;
   }
 

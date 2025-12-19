@@ -16,29 +16,18 @@ public class MinimapAuthorSquiggle
   readonly NocabRNG rng;
   readonly AuthorUtilities authorUtil;
 
-  public int XWiggleDelta
-  {
-    get { return _xWiggleDelta; }
-    set { _xWiggleDelta = math.abs(value); }
-  }
-  public int YWiggleDelta
-  {
-    get { return _yWiggleDelta; }
-    set { _yWiggleDelta = math.abs(value); }
-  }
+  private int XWiggleDelta;
+  private int YWiggleDelta;
 
-  private int _xWiggleDelta = 0;
-  private int _yWiggleDelta = 0;
-
-  public MinimapAuthorSquiggle(NocabRNG rng, int xWiggleDelta, int yWiggleDelta)
+  public MinimapAuthorSquiggle(NocabRNG rng, int xWiggleDelta = 0, int yWiggleDelta = 0)
   {
     this.rng = rng;
     this.authorUtil = new AuthorUtilities(rng);
-    this._xWiggleDelta = math.abs(xWiggleDelta);
-    this._yWiggleDelta = math.abs(yWiggleDelta);
+    this.XWiggleDelta = math.abs(xWiggleDelta);
+    this.YWiggleDelta = math.abs(yWiggleDelta);
   }
 
-  public MinimapAuthorSquiggle(int xWiggleDelta, int yWiggleDelta)
+  public MinimapAuthorSquiggle(int xWiggleDelta = 0, int yWiggleDelta = 0)
     : this(NocabRNG.defaultRNG, xWiggleDelta, yWiggleDelta) { }
 
   /**
@@ -180,21 +169,6 @@ public class MinimapAuthorSquiggle
     {
       return cities;
     }
-    return wiggleCityPositions(cities);
-  }
-
-  protected List<City> wiggleCityPositions(List<City> cities)
-  {
-    List<City> wiggedCities = new();
-    foreach (City city in cities)
-    {
-      wiggedCities.Add(
-        new City(
-          city.position.x + rng.generateInt(-XWiggleDelta, XWiggleDelta),
-          city.position.y + rng.generateInt(-YWiggleDelta, YWiggleDelta)
-        )
-      );
-    }
-    return wiggedCities;
+    return authorUtil.wiggleCityPositions(cities, XWiggleDelta, YWiggleDelta);
   }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Collections;
 using UnityEngine;
@@ -13,7 +14,15 @@ public enum CardinalDirection
 
 public static class CardinalDirection_Util
 {
-  public static CardinalDirection opposite(CardinalDirection direction)
+  public static readonly List<CardinalDirection> ALL_DIRECTIONS = new()
+  {
+    CardinalDirection.North,
+    CardinalDirection.South,
+    CardinalDirection.East,
+    CardinalDirection.West,
+  };
+
+  public static CardinalDirection Opposite(CardinalDirection direction)
   {
     switch (direction)
     {
@@ -27,6 +36,21 @@ public static class CardinalDirection_Util
         return CardinalDirection.East;
       default:
         return CardinalDirection.North;
+    }
+  }
+
+  public static List<CardinalDirection> OrthogonalTo(CardinalDirection direction)
+  {
+    switch (direction)
+    {
+      case CardinalDirection.North:
+      case CardinalDirection.South:
+        return new() { CardinalDirection.East, CardinalDirection.West };
+      case CardinalDirection.East:
+      case CardinalDirection.West:
+        return new() { CardinalDirection.North, CardinalDirection.South };
+      default:
+        throw new ArgumentException($"Invalid direction: {direction}");
     }
   }
 
@@ -66,6 +90,7 @@ public static class CardinalDirection_Util
 
   public static Vector2Int GetVector(CardinalDirection direction)
   {
+    // Assume positive Y is upwards.
     switch (direction)
     {
       case CardinalDirection.North:
